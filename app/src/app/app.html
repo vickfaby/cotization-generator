@@ -1,0 +1,279 @@
+<main class="app-shell">
+  <header class="app-header">
+    <div>
+      <h1>{{ title() }}</h1>
+      <p class="app-subtitle">
+        Diseña, visualiza y descarga cotizaciones profesionales de servicios de software.
+      </p>
+    </div>
+    <button type="button" class="primary-button" (click)="descargarPdf()">
+      Descargar PDF
+    </button>
+  </header>
+
+  <section class="app-body">
+    <div class="form-panel">
+      <h2>Datos generales</h2>
+
+      <div class="form-section">
+        <h3>Empresa</h3>
+        <div class="grid-2">
+          <label>
+            <span>Nombre de la empresa</span>
+            <input [(ngModel)]="company.nombre" />
+          </label>
+          <label>
+            <span>NIT</span>
+            <input [(ngModel)]="company.nit" />
+          </label>
+          <label>
+            <span>Dirección</span>
+            <input [(ngModel)]="company.direccion" />
+          </label>
+          <label>
+            <span>Teléfono</span>
+            <input [(ngModel)]="company.telefono" />
+          </label>
+          <label>
+            <span>Correo electrónico</span>
+            <input [(ngModel)]="company.email" />
+          </label>
+          <label>
+            <span>URL del logo (opcional)</span>
+            <input [(ngModel)]="company.logoUrl" placeholder="https://..." />
+          </label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Cliente</h3>
+        <div class="grid-2">
+          <label>
+            <span>Nombre del cliente</span>
+            <input [(ngModel)]="client.nombre" />
+          </label>
+          <label>
+            <span>Empresa del cliente</span>
+            <input [(ngModel)]="client.empresa" />
+          </label>
+          <label>
+            <span>Persona de contacto</span>
+            <input [(ngModel)]="client.contacto" />
+          </label>
+          <label>
+            <span>Dirección</span>
+            <input [(ngModel)]="client.direccion" />
+          </label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Información de la cotización</h3>
+        <div class="grid-3">
+          <label>
+            <span>Número de cotización</span>
+            <input [(ngModel)]="quoteMeta.numero" />
+          </label>
+          <label>
+            <span>Fecha de emisión</span>
+            <input type="date" [(ngModel)]="quoteMeta.fecha" />
+          </label>
+          <label>
+            <span>Validez (días)</span>
+            <input type="number" min="1" [(ngModel)]="quoteMeta.validezDias" />
+          </label>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Resumen ejecutivo</h3>
+        <textarea
+          rows="4"
+          [(ngModel)]="resumenEjecutivo"
+          placeholder="Breve descripción del alcance y objetivo de la propuesta"
+        ></textarea>
+      </div>
+
+      <div class="form-section">
+        <div class="section-header">
+          <h3>Perfiles y tarifas</h3>
+          <button type="button" class="ghost-button" (click)="agregarItem()">
+            + Agregar fila
+          </button>
+        </div>
+
+        <details class="columns-config">
+          <summary>Configurar nombres de columnas</summary>
+          <div class="grid-3">
+            <label *ngFor="let col of tableColumns">
+              <span>{{ col.label }}</span>
+              <input [(ngModel)]="(col as any).label" />
+            </label>
+          </div>
+        </details>
+
+        <div class="table-scroll">
+          <table class="edit-table">
+            <thead>
+              <tr>
+                <th *ngFor="let col of tableColumns">{{ col.label }}</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of items; let i = index; trackBy: trackByIndex">
+                <td>
+                  <input [(ngModel)]="item.perfil" />
+                </td>
+                <td>
+                  <input [(ngModel)]="item.seniority" />
+                </td>
+                <td>
+                  <input [(ngModel)]="item.tecnologias" />
+                </td>
+                <td>
+                  <select [(ngModel)]="item.tipo">
+                    <option value="hora">Por hora (Time &amp; Materials)</option>
+                    <option value="mensual">Tarifa mensual (Staff Augmentation)</option>
+                  </select>
+                </td>
+                <td>
+                  <input type="number" min="0" [(ngModel)]="item.cantidad" />
+                </td>
+                <td>
+                  <input type="number" min="0" [(ngModel)]="item.tarifa" />
+                </td>
+                <td class="numeric-cell">
+                  {{ calcularTotalItem(item) | number : '1.0-0' }}
+                </td>
+                <td>
+                  <button
+                    type="button"
+                    class="icon-button"
+                    (click)="eliminarItem(i)"
+                    [disabled]="items.length === 1"
+                    aria-label="Eliminar fila"
+                  >
+                    ×
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="form-section">
+        <h3>Términos y condiciones</h3>
+        <div class="conditions-list">
+          <label *ngFor="let cond of condicionesComerciales; let idx = index">
+            <span>Término {{ idx + 1 }}</span>
+            <textarea rows="2" [(ngModel)]="condicionesComerciales[idx]"></textarea>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <div class="preview-panel">
+      <div class="preview-card" #previewRef>
+        <div class="quote-header">
+          <div class="quote-title">
+            <span class="quote-badge">Cotización</span>
+            <h2>Servicios de desarrollo de software</h2>
+          </div>
+          <div class="quote-logo" *ngIf="company.logoUrl">
+            <img [src]="company.logoUrl" alt="Logo de {{ company.nombre }}" />
+          </div>
+        </div>
+
+        <div class="quote-meta">
+          <div class="meta-block">
+            <h3>{{ company.nombre }}</h3>
+            <p>NIT: {{ company.nit }}</p>
+            <p>{{ company.direccion }}</p>
+            <p>{{ company.telefono }}</p>
+            <p>{{ company.email }}</p>
+          </div>
+          <div class="meta-block">
+            <p><strong>Fecha:</strong> {{ quoteMeta.fecha | date : 'dd/MM/yyyy' }}</p>
+            <p><strong>Cotización N.º:</strong> {{ quoteMeta.numero }}</p>
+            <p>
+              <strong>Válida hasta:</strong>
+              {{ fechaValidez | date : 'dd/MM/yyyy' }}
+            </p>
+            <p>
+              <strong>Cliente:</strong>
+              {{ client.empresa || client.nombre }}
+            </p>
+          </div>
+        </div>
+
+        <div class="quote-section">
+          <h3>Resumen ejecutivo</h3>
+          <p class="paragraph">
+            {{ resumenEjecutivo }}
+          </p>
+        </div>
+
+        <div class="quote-section">
+          <h3>Perfiles y tarifas</h3>
+          <table class="quote-table">
+            <thead>
+              <tr>
+                <th *ngFor="let col of tableColumns">{{ col.label }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of items; trackBy: trackByIndex">
+                <td>{{ item.perfil }}</td>
+                <td>{{ item.seniority }}</td>
+                <td>{{ item.tecnologias }}</td>
+                <td>
+                  {{
+                    item.tipo === 'hora'
+                      ? 'Time & Materials (por hora)'
+                      : 'Tarifa mensual (160 horas/mes)'
+                  }}
+                </td>
+                <td class="numeric-cell">
+                  {{ item.cantidad | number : '1.0-0' }}
+                </td>
+                <td class="numeric-cell">
+                  {{ item.tarifa | currency : 'COP' : 'symbol-narrow' : '1.0-0' }}
+                </td>
+                <td class="numeric-cell">
+                  {{ calcularTotalItem(item) | currency : 'COP' : 'symbol-narrow' : '1.0-0' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="totals">
+            <div class="totals-row">
+              <span>Subtotal</span>
+              <span>{{ subtotal | currency : 'COP' : 'symbol-narrow' : '1.0-0' }}</span>
+            </div>
+            <div class="totals-row">
+              <span>Impuestos (19% IVA)</span>
+              <span>{{ impuestos | currency : 'COP' : 'symbol-narrow' : '1.0-0' }}</span>
+            </div>
+            <div class="totals-row totals-row--strong">
+              <span>Total</span>
+              <span>{{ total | currency : 'COP' : 'symbol-narrow' : '1.0-0' }}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="quote-section">
+          <h3>Términos y condiciones</h3>
+          <ol class="conditions-preview">
+            <li *ngFor="let cond of condicionesComerciales">
+              {{ cond }}
+            </li>
+          </ol>
+      </div>
+    </div>
+  </div>
+  </section>
+</main>
+
