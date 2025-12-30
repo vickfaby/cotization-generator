@@ -501,7 +501,7 @@ textarea {
 .invoice-page {
   width: 100%;
   max-width: 820px;
-  aspect-ratio: 1 / 1.414; /* A4 */
+  min-height: 297mm; /* Altura mínima A4 */
   background: #ffffff;
   border-radius: 1rem;
   box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
@@ -510,6 +510,11 @@ textarea {
   display: flex;
   flex-direction: column;
   gap: 1.25rem;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  page-break-after: avoid;
+  page-break-inside: avoid;
 }
 
 .invoice-header {
@@ -522,19 +527,23 @@ textarea {
 
 .invoice-title h1 {
   margin: 0;
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   color: #111827;
   font-weight: 700;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: -0.02em;
 }
 
 .invoice-meta {
-  font-size: 0.8rem;
+  font-size: 0.675rem;
   color: #374151;
   text-align: right;
+  font-family: 'Inter', sans-serif;
 }
 
 .invoice-meta p {
   margin: 0.15rem 0;
+  font-family: 'Inter', sans-serif;
 }
 
 .invoice-parties {
@@ -545,19 +554,23 @@ textarea {
 }
 
 .invoice-party {
-  font-size: 0.85rem;
+  font-size: 0.725rem;
   color: #4b5563;
+  font-family: 'Inter', sans-serif;
 }
 
 .invoice-party h3 {
   margin: 0 0 0.5rem;
-  font-size: 0.9rem;
+  font-size: 0.775rem;
   color: #111827;
   font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: -0.01em;
 }
 
 .invoice-party p {
   margin: 0.2rem 0;
+  font-family: 'Inter', sans-serif;
 }
 
 .invoice-items {
@@ -567,7 +580,8 @@ textarea {
 .invoice-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.78rem;
+  font-size: 0.655rem;
+  font-family: 'Inter', sans-serif;
 }
 
 .invoice-table th,
@@ -575,6 +589,7 @@ textarea {
   padding: 0.5rem 0.4rem;
   border-bottom: 1px solid #e5e7eb;
   text-align: left;
+  font-family: 'Inter', sans-serif;
 }
 
 .invoice-table thead th {
@@ -582,20 +597,24 @@ textarea {
   color: #1f2937;
   font-weight: 600;
   text-transform: uppercase;
-  font-size: 0.75rem;
+  font-size: 0.625rem;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: 0.02em;
 }
 
 .invoice-totals {
   margin-top: 0.75rem;
   margin-left: auto;
   max-width: 280px;
-  font-size: 0.85rem;
+  font-size: 0.725rem;
+  font-family: 'Inter', sans-serif;
 }
 
 .invoice-totals .totals-row {
   display: flex;
   justify-content: space-between;
   padding: 0.25rem 0;
+  font-family: 'Inter', sans-serif;
 }
 
 .invoice-totals .totals-row--strong {
@@ -603,10 +622,12 @@ textarea {
   margin-top: 0.35rem;
   padding-top: 0.4rem;
   font-weight: 700;
-  font-size: 0.95rem;
+  font-size: 0.825rem;
   display: flex;
   justify-content: space-between;
   gap: 1rem;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: -0.01em;
 }
 
 .invoice-totals .total-amount {
@@ -619,34 +640,41 @@ textarea {
   background: #f9fafb;
   border-left: 3px solid #6366f1;
   border-radius: 0.4rem;
-  font-size: 0.8rem;
+  font-size: 0.675rem;
   color: #4b5563;
+  font-family: 'Inter', sans-serif;
 }
 
 .invoice-note p {
   margin: 0;
+  font-family: 'Inter', sans-serif;
 }
 
 .invoice-payment {
   margin-top: 1rem;
   padding-top: 1rem;
   border-top: 1px solid #e5e7eb;
+  font-family: 'Inter', sans-serif;
 }
 
 .invoice-payment h3 {
   margin: 0 0 0.5rem;
-  font-size: 0.9rem;
+  font-size: 0.775rem;
   color: #111827;
   font-weight: 600;
+  font-family: 'Inter', sans-serif;
+  letter-spacing: -0.01em;
 }
 
 .payment-details {
-  font-size: 0.8rem;
+  font-size: 0.675rem;
   color: #4b5563;
+  font-family: 'Inter', sans-serif;
 }
 
 .payment-details p {
   margin: 0.2rem 0;
+  font-family: 'Inter', sans-serif;
 }
 
 /* Responsivo */

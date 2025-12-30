@@ -16,24 +16,24 @@ export class AppComponent {
   title = 'Generador de Cotizaciones';
   activeTab: 'quote' | 'invoice' = 'quote';
 
-  companyIdType: 'NIT' | 'CC' = 'NIT';
+  companyIdType: 'NIT' | 'CC' = 'CC';
   company = {
-    name: 'Milenio Digital',
-    nit: '900.000.000-1',
-    address: 'Calle 123 # 45-67',
-    city: 'Bogotá D. C.',
-    postalCode: '',
-    phone: '+57 300 000 0000',
-    email: 'contacto@empresa.com',
+    name: 'VICTOR FABIAN MORALES RODRIGUEZ',
+    nit: '1098736746',
+    address: 'CALLE 14 # 26-11',
+    city: 'Bucaramanga',
+    postalCode: '680002',
+    phone: '+57 3167527891',
+    email: 'vick@lidr.co',
     logoUrl: ''
   };
 
   client = {
-    name: 'Nombre del Cliente',
-    company: 'Empresa del Cliente',
-    nit: 'NIT del Cliente',
-    address: 'Dirección del Cliente',
-    city: 'Ciudad',
+    name: 'LIDR Talent SL',
+    company: 'LIDR Talent SL',
+    nit: 'B13990049',
+    address: 'Calle Craywinckel, 2. Escalera B, Ático 3',
+    city: 'Barcelona',
   };
 
   quote = {
@@ -82,7 +82,7 @@ export class AppComponent {
   invoice = {
     number: 'FAC-001',
     issueDate: new Date().toISOString().substring(0, 10),
-    dueDate: this.computeDueDate(7)
+    dueDate: this.computeDueDate(31)
   };
 
   invoiceItems: {
@@ -90,21 +90,21 @@ export class AppComponent {
     quantity: number;
     unitPrice: number;
   }[] = [
-    { description: 'Servicios profesionales de desarrollo de software', quantity: 1, unitPrice: 2000 }
+    { description: 'Tareas de teaching assistant durante el mes de diciembre (en horas)', quantity: 12, unitPrice: 10.00 }
   ];
 
   invoiceIvaPercentage = 0;
   invoiceNote = 'Operación exenta de IVA por tratarse de una exportación de servicios desde Colombia.';
 
-  clientIdType: 'NIF' | 'NIT' | 'CIF' = 'NIF';
+  clientIdType: 'NIF' | 'NIT' | 'CIF' = 'CIF';
   currency: 'USD' | 'EUR' | 'COP' = 'EUR';
-  paymentTitle = 'DATOS DE PAGO - Transferencia SEPA en EUR';
+  paymentTitle = 'DATOS DE PAGO - GLOBAL66 - Transferencia SEPA en EUR';
 
   paymentDetails = {
-    bank: 'Banking Circle S.A.',
+    bank: 'The Currency Cloud Limited',
     beneficiary: this.company.name,
-    iban: 'LU93 1234 5678 9012 3456',
-    bic: 'BKCILULL'
+    iban: 'GB79TCCL00997938524202',
+    bic: 'TCCLGB21'
   };
 
   get subtotal(): number {
@@ -277,26 +277,110 @@ export class AppComponent {
   }
 
   async generatePdf(): Promise<void> {
-    const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
-      import('html2canvas'),
-      import('jspdf'),
-    ]);
-
     const element = this.activeTab === 'quote'
       ? this.quotePreviewRef?.nativeElement
       : this.invoicePreviewRef?.nativeElement;
 
     if (!element) return;
 
-    const canvas = await html2canvas(element, { scale: 2 } as any);
+    // Esperar a que las fuentes se carguen antes de generar el PDF
+    await this.waitForFonts();
+
+    // Intentar usar html2pdf.js que puede tener mejor soporte
+    try {
+      const html2pdf = (await import('html2pdf.js')).default;
+
+      const opt = {
+        margin: [0, 0, 0, 0] as [number, number, number, number],
+        filename: this.getPdfFileName(),
+        image: { type: 'jpeg' as const, quality: 0.98 },
+        html2canvas: {
+          scale: 2,
+          useCORS: true,
+          logging: false,
+          letterRendering: true, // Mejor renderizado de texto
+          windowWidth: element.scrollWidth,
+          windowHeight: element.scrollHeight
+        },
+        jsPDF: {
+          unit: 'mm',
+          format: 'a4',
+          orientation: 'portrait' as const,
+          compress: true
+        },
+        pagebreak: {
+          mode: ['avoid-all', 'css', 'legacy'],
+          before: '.page-break-before',
+          after: '.page-break-after',
+          avoid: ['tr', 'td', 'th']
+        }
+      };
+
+      await html2pdf().set(opt).from(element).save();
+      return;
+    } catch (error) {
+      console.warn('html2pdf.js no disponible, usando método alternativo:', error);
+    }
+
+    // Fallback: método original con html2canvas + jsPDF
+    // NOTA: Este método genera una imagen, por lo que el texto NO es seleccionable
+    // Para texto completamente seleccionable, se recomienda usar Puppeteer en un backend
+    // Ver archivo: backend-puppeteer-example.js para un ejemplo de implementación
+    const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
+      import('html2canvas'),
+      import('jspdf'),
+    ]);
+
+    const canvas = await html2canvas(element, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      windowWidth: element.scrollWidth,
+      windowHeight: element.scrollHeight
+    } as any);
     const imgData = canvas.toDataURL('image/png');
 
     const pdf = new jsPDF('p', 'mm', 'a4');
     const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+    const pdfHeight = pdf.internal.pageSize.getHeight();
+    const calculatedHeight = (canvas.height * pdfWidth) / canvas.width;
 
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+    // Si el contenido cabe en una página, usar solo una página
+    if (calculatedHeight <= pdfHeight) {
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, calculatedHeight);
+    } else {
+      // Si el contenido es más grande, dividirlo en múltiples páginas
+      let heightLeft = calculatedHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, calculatedHeight);
+      heightLeft -= pdfHeight;
+
+      while (heightLeft > 0) {
+        position = heightLeft - calculatedHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, calculatedHeight);
+        heightLeft -= pdfHeight;
+      }
+    }
+
     pdf.save(this.getPdfFileName());
+  }
+
+  private async waitForFonts(): Promise<void> {
+    // Esperar a que las fuentes de Google Fonts se carguen
+    if (document.fonts && document.fonts.ready) {
+      try {
+        await document.fonts.ready;
+        // Esperar un poco más para asegurar que las fuentes estén completamente cargadas
+        await new Promise(resolve => setTimeout(resolve, 500));
+      } catch (error) {
+        console.warn('Error esperando fuentes:', error);
+      }
+    } else {
+      // Fallback: esperar un tiempo fijo si document.fonts no está disponible
+      await new Promise(resolve => setTimeout(resolve, 1000));
+    }
   }
 
   private getPdfFileName(): string {
