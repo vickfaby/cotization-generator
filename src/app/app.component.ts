@@ -11,8 +11,10 @@ import { FormsModule } from '@angular/forms';
 })
 export class AppComponent {
   @ViewChild('quotePreview') quotePreviewRef!: ElementRef<HTMLDivElement>;
+  @ViewChild('invoicePreview') invoicePreviewRef!: ElementRef<HTMLDivElement>;
 
   title = 'Generador de Cotizaciones';
+  activeTab: 'quote' | 'invoice' = 'quote';
 
   company = {
     name: 'Milenio Digital',
@@ -73,6 +75,35 @@ export class AppComponent {
     'Jornada de trabajo: Lunes a Viernes en horario de oficina (8:00 a.m. a 6:00 p.m.).',
     'Las horas extra se facturan con un recargo del 30% sobre la tarifa base.',
   ];
+
+  // Datos de factura
+  invoice = {
+    number: 'FAC-001',
+    issueDate: new Date().toISOString().substring(0, 10),
+    dueDate: this.computeDueDate(7)
+  };
+
+  invoiceItems: {
+    description: string;
+    quantity: number;
+    unitPrice: number;
+  }[] = [
+    { description: 'Servicios profesionales de desarrollo de software', quantity: 1, unitPrice: 2000 }
+  ];
+
+  invoiceIvaPercentage = 0;
+  invoiceNote = 'Operación exenta de IVA por tratarse de una exportación de servicios desde Colombia.';
+
+  clientIdType: 'NIF' | 'NIT' | 'CIF' = 'NIF';
+  currency: 'USD' | 'EUR' | 'COP' = 'EUR';
+  paymentTitle = 'DATOS DE PAGO - Transferencia SEPA en EUR';
+
+  paymentDetails = {
+    bank: 'Banking Circle S.A.',
+    beneficiary: this.company.name,
+    iban: 'LU93 1234 5678 9012 3456',
+    bic: 'BKCILULL'
+  };
 
   get subtotal(): number {
     return this.items.reduce(
@@ -186,16 +217,76 @@ export class AppComponent {
     return result.toISOString().substring(0, 10);
   }
 
-  async generatePdf(): Promise<void> {
-    if (!this.quotePreviewRef) return;
+  private computeDueDate(days: number): string {
+    const base = new Date();
+    const result = new Date(base.getFullYear(), base.getMonth(), base.getDate() + days);
+    return result.toISOString().substring(0, 10);
+  }
 
+  onInvoiceDueDateChange(): void {
+    // Puedes agregar lógica aquí si es necesario
+  }
+
+  get invoiceSubtotal(): number {
+    return this.invoiceItems.reduce(
+      (acc, item) => acc + (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0),
+      0
+    );
+  }
+
+  get invoiceTaxAmount(): number {
+    return (this.invoiceSubtotal * Number(this.invoiceIvaPercentage || 0)) / 100;
+  }
+
+  get invoiceTotal(): number {
+    return this.invoiceSubtotal + this.invoiceTaxAmount;
+  }
+
+  get currencySymbol(): string {
+    const symbols: Record<string, string> = {
+      'USD': '$',
+      'EUR': '€',
+      'COP': '$'
+    };
+    return symbols[this.currency] || '';
+  }
+
+  updatePaymentTitle(): void {
+    this.paymentTitle = `DATOS DE PAGO - Transferencia SEPA en ${this.currency}`;
+    // Actualizar el título automáticamente si el usuario no lo ha personalizado
+    if (this.paymentTitle.includes('SEPA')) {
+      // Solo actualizar si aún tiene el formato por defecto
+    }
+  }
+
+  addInvoiceItem(): void {
+    this.invoiceItems.push({
+      description: '',
+      quantity: 1,
+      unitPrice: 0
+    });
+  }
+
+  removeInvoiceItem(index: number): void {
+    if (this.invoiceItems.length <= 1) {
+      return;
+    }
+    this.invoiceItems.splice(index, 1);
+  }
+
+  async generatePdf(): Promise<void> {
     const [{ default: html2canvas }, { default: jsPDF }] = await Promise.all([
       import('html2canvas'),
       import('jspdf'),
     ]);
 
-    const element = this.quotePreviewRef.nativeElement;
-    const canvas = await html2canvas(element, { scale: 2 });
+    const element = this.activeTab === 'quote'
+      ? this.quotePreviewRef?.nativeElement
+      : this.invoicePreviewRef?.nativeElement;
+
+    if (!element) return;
+
+    const canvas = await html2canvas(element, { scale: 2 } as any);
     const imgData = canvas.toDataURL('image/png');
 
     const pdf = new jsPDF('p', 'mm', 'a4');
@@ -207,22 +298,42 @@ export class AppComponent {
   }
 
   private getPdfFileName(): string {
-    const rawNumber = (this.quote.number ?? '').toString().trim();
-    const numericPart = rawNumber.replace(/\D/g, '') || '0';
-    const paddedNumber = numericPart.slice(-3).padStart(3, '0');
+    if (this.activeTab === 'invoice') {
+      const rawNumber = (this.invoice.number ?? '').toString().trim();
+      const numericPart = rawNumber.replace(/\D/g, '') || '0';
+      const paddedNumber = numericPart.slice(-3).padStart(3, '0');
 
-    const baseCompany =
-      (this.client.company || this.client.name || 'Cliente')
-        .toString()
-        .trim() || 'Cliente';
+      const baseCompany =
+        (this.client.company || this.client.name || 'Cliente')
+          .toString()
+          .trim() || 'Cliente';
 
-    const companySlug = baseCompany
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .replace(/[^a-zA-Z0-9]+/g, '-')
-      .replace(/^-+|-+$/g, '')
-      .toUpperCase();
+      const companySlug = baseCompany
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .toUpperCase();
 
-    return `cotizacion-JOBTY-${companySlug || 'CLIENTE'}-${paddedNumber}.pdf`;
+      return `factura-JOBTY-${companySlug || 'CLIENTE'}-${paddedNumber}.pdf`;
+    } else {
+      const rawNumber = (this.quote.number ?? '').toString().trim();
+      const numericPart = rawNumber.replace(/\D/g, '') || '0';
+      const paddedNumber = numericPart.slice(-3).padStart(3, '0');
+
+      const baseCompany =
+        (this.client.company || this.client.name || 'Cliente')
+          .toString()
+          .trim() || 'Cliente';
+
+      const companySlug = baseCompany
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .toUpperCase();
+
+      return `cotizacion-JOBTY-${companySlug || 'CLIENTE'}-${paddedNumber}.pdf`;
+    }
   }
 }
