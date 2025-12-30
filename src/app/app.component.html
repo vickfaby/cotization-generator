@@ -288,7 +288,14 @@
             <input type="text" [(ngModel)]="company.name" />
           </label>
           <label>
-            <span>NIT / C.C.</span>
+            <span>Tipo de identificación</span>
+            <select [(ngModel)]="companyIdType">
+              <option value="NIT">NIT</option>
+              <option value="CC">C.C.</option>
+            </select>
+          </label>
+          <label>
+            <span>{{ companyIdType }}</span>
             <input type="text" [(ngModel)]="company.nit" />
           </label>
           <label>
@@ -298,6 +305,10 @@
           <label>
             <span>Ciudad</span>
             <input type="text" [(ngModel)]="company.city" />
+          </label>
+          <label>
+            <span>Código postal</span>
+            <input type="text" [(ngModel)]="company.postalCode" />
           </label>
           <label>
             <span>Teléfono</span>
@@ -398,7 +409,7 @@
                 <td class="numeric">
                   {{
                     ((+item.quantity || 0) * (+item.unitPrice || 0) | number : '1.0-0')
-                  }}
+                  }} {{ currency }}
                 </td>
                 <td>
                   <button
@@ -601,9 +612,9 @@
           <div class="invoice-party">
             <h3>DE:</h3>
             <p><strong>{{ company.name }}</strong></p>
-            <p>NIT/C.C.: {{ company.nit }}</p>
+            <p>{{ companyIdType }}: {{ company.nit }}</p>
             <p>{{ company.address }}</p>
-            <p>{{ company.city }}, Colombia</p>
+            <p>{{ company.city }}{{ company.postalCode ? ', ' + company.postalCode : '' }}, Colombia</p>
             <p *ngIf="company.email">Email: {{ company.email }}</p>
             <p *ngIf="company.phone">Tel: {{ company.phone }}</p>
           </div>
@@ -631,9 +642,9 @@
               <tr *ngFor="let item of invoiceItems; let i = index; trackBy: trackByIndex">
                 <td>{{ item.description }}</td>
                 <td class="numeric">{{ item.quantity | number : '1.0-0' }}</td>
-                <td class="numeric">{{ item.unitPrice | number : '1.0-0' }}</td>
+                <td class="numeric">{{ item.unitPrice | number : '1.2-2' }} {{ currency }}</td>
                 <td class="numeric">
-                  {{ ((+item.quantity || 0) * (+item.unitPrice || 0) | number : '1.0-0') }}
+                  {{ ((+item.quantity || 0) * (+item.unitPrice || 0) | number : '1.2-2') }} {{ currency }}
                 </td>
               </tr>
             </tbody>
@@ -644,15 +655,15 @@
         <section class="invoice-totals">
           <div class="totals-row">
             <span>SUBTOTAL</span>
-            <span>{{ currencySymbol }} {{ invoiceSubtotal | number : '1.0-0' }}</span>
+            <span>{{ currencySymbol }} {{ invoiceSubtotal | number : '1.2-2' }}</span>
           </div>
           <div class="totals-row" *ngIf="invoiceIvaPercentage > 0">
             <span>IVA ({{ invoiceIvaPercentage }}%)</span>
-            <span>{{ currencySymbol }} {{ invoiceTaxAmount | number : '1.0-0' }}</span>
+            <span>{{ currencySymbol }} {{ invoiceTaxAmount | number : '1.2-2' }}</span>
           </div>
           <div class="totals-row totals-row--strong">
             <span>TOTAL A PAGAR</span>
-            <span class="total-amount">{{ currencySymbol }} {{ invoiceTotal | number : '1.0-0' }}</span>
+            <span class="total-amount">{{ currencySymbol }} {{ invoiceTotal | number : '1.2-2' }}</span>
           </div>
         </section>
 

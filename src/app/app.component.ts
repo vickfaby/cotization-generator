@@ -16,11 +16,13 @@ export class AppComponent {
   title = 'Generador de Cotizaciones';
   activeTab: 'quote' | 'invoice' = 'quote';
 
+  companyIdType: 'NIT' | 'CC' = 'NIT';
   company = {
     name: 'Milenio Digital',
     nit: '900.000.000-1',
     address: 'Calle 123 # 45-67',
     city: 'Bogotá D. C.',
+    postalCode: '',
     phone: '+57 300 000 0000',
     email: 'contacto@empresa.com',
     logoUrl: ''
