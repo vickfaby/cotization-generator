@@ -88,9 +88,11 @@ export class AppComponent {
   invoiceItems: {
     description: string;
     quantity: number;
+    quantityType: 'items' | 'time';
+    timeInput: string; // Para almacenar el formato HH:MM
     unitPrice: number;
   }[] = [
-    { description: 'Tareas de teaching assistant durante el mes de diciembre (en horas)', quantity: 12, unitPrice: 10.00 }
+    { description: 'Tareas de teaching assistant durante el mes de diciembre (en horas)', quantity: 12, quantityType: 'time', timeInput: '12:00', unitPrice: 10.00 }
   ];
 
   invoiceIvaPercentage = 0;
@@ -231,7 +233,12 @@ export class AppComponent {
 
   get invoiceSubtotal(): number {
     return this.invoiceItems.reduce(
-      (acc, item) => acc + (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0),
+      (acc, item) => {
+        const quantity = item.quantityType === 'time' 
+          ? this.timeToDecimalHours(item.timeInput || '0:00')
+          : (Number(item.quantity) || 0);
+        return acc + quantity * (Number(item.unitPrice) || 0);
+      },
       0
     );
   }
@@ -265,8 +272,144 @@ export class AppComponent {
     this.invoiceItems.push({
       description: '',
       quantity: 1,
+      quantityType: 'items',
+      timeInput: '0:00',
       unitPrice: 0
     });
+  }
+
+  // Convertir formato HH:MM a horas decimales (ej: "3:20" -> 3.333)
+  timeToDecimalHours(timeString: string): number {
+    if (!timeString || !timeString.includes(':')) {
+      return Number(timeString) || 0;
+    }
+    const parts = timeString.split(':');
+    const hours = Number(parts[0]) || 0;
+    const minutes = Number(parts[1]) || 0;
+    return hours + (minutes / 60);
+  }
+
+  // Método público para usar en el template
+  getTimeDecimalHours(timeString: string): number {
+    return this.timeToDecimalHours(timeString);
+  }
+
+  // Convertir horas decimales a formato HH:MM (ej: 3.333 -> "3:20")
+  decimalHoursToTime(decimalHours: number): string {
+    const hours = Math.floor(decimalHours);
+    const minutes = Math.round((decimalHours - hours) * 60);
+    return `${hours}:${minutes.toString().padStart(2, '0')}`;
+  }
+
+  // Validar formato de tiempo HH:MM
+  validateTimeFormat(timeString: string): boolean {
+    if (!timeString) return false;
+    const timeRegex = /^(\d+):([0-5]?\d)$/;
+    return timeRegex.test(timeString);
+  }
+
+  // Manejar cambio de tipo de cantidad
+  onQuantityTypeChange(item: any, index: number): void {
+    if (item.quantityType === 'time') {
+      // Si cambia a tiempo, convertir la cantidad actual a formato HH:MM
+      if (item.quantity && !item.timeInput) {
+        item.timeInput = this.decimalHoursToTime(item.quantity);
+      } else if (!item.timeInput) {
+        item.timeInput = '0:00';
+      }
+    } else {
+      // Si cambia a items, convertir tiempo a decimal si existe
+      if (item.timeInput) {
+        item.quantity = this.timeToDecimalHours(item.timeInput);
+        item.timeInput = '';
+      }
+    }
+  }
+
+  // Manejar cambio en input de tiempo
+  onTimeInputChange(item: any, event: any): void {
+    const value = event.target.value;
+    
+    // Siempre actualizar el valor del input para permitir escritura libre
+    item.timeInput = value;
+    
+    // Si el usuario ingresa solo números (sin :), asumir que son horas al perder el foco
+    // Pero no modificar mientras escribe para permitir borrado normal
+    
+    // Actualizar quantity para cálculos solo si el formato es válido
+    if (this.validateTimeFormat(value)) {
+      item.quantity = this.timeToDecimalHours(value);
+    } else if (value === '' || value === ':') {
+      item.quantity = 0;
+    } else {
+      // Si no es válido pero tiene contenido, intentar calcular de todas formas
+      // para que el total no se rompa mientras el usuario escribe
+      item.quantity = this.timeToDecimalHours(value || '0:00');
+    }
+  }
+
+  // Verificar si el input de tiempo tiene un formato válido
+  isTimeInputValid(item: any): boolean {
+    if (!item.timeInput || item.timeInput === '') {
+      return true; // Vacío se considera válido (se mostrará como 0:00)
+    }
+    return this.validateTimeFormat(item.timeInput);
+  }
+
+  // Manejar cuando el input pierde el foco para normalizar el formato
+  onTimeInputBlur(item: any, event: any): void {
+    let value = event.target.value;
+    
+    // Si está vacío, poner 0:00
+    if (!value || value === '') {
+      value = '0:00';
+      item.timeInput = value;
+      item.quantity = 0;
+      event.target.value = value;
+      return;
+    }
+    
+    // Si el usuario ingresa solo números (sin :), asumir que son horas
+    if (/^\d+$/.test(value)) {
+      value = value + ':00';
+      item.timeInput = value;
+      item.quantity = this.timeToDecimalHours(value);
+      event.target.value = value;
+      return;
+    }
+    
+    // Si el formato no es válido, intentar corregirlo o poner 0:00
+    if (!this.validateTimeFormat(value)) {
+      // Si tiene formato parcial como "3:" o "3:2", intentar completarlo
+      if (/^\d+:$/.test(value)) {
+        value = value + '00';
+        item.timeInput = value;
+        item.quantity = this.timeToDecimalHours(value);
+        event.target.value = value;
+      } else if (/^\d+:\d$/.test(value)) {
+        value = value + '0';
+        item.timeInput = value;
+        item.quantity = this.timeToDecimalHours(value);
+        event.target.value = value;
+      } else {
+        // Si no se puede corregir, poner 0:00
+        value = '0:00';
+        item.timeInput = value;
+        item.quantity = 0;
+        event.target.value = value;
+      }
+    } else {
+      // Si es válido, asegurar que los minutos tengan 2 dígitos
+      const parts = value.split(':');
+      if (parts.length === 2) {
+        const hours = parts[0];
+        const minutes = parts[1].padStart(2, '0');
+        value = `${hours}:${minutes}`;
+        item.timeInput = value;
+        item.quantity = this.timeToDecimalHours(value);
+        event.target.value = value;
+      }
+    }
   }
 
   removeInvoiceItem(index: number): void {

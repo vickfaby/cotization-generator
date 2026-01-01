@@ -248,6 +248,17 @@ textarea {
   box-sizing: border-box;
 }
 
+.items-table td input.invalid-time {
+  border-color: #ef4444;
+  border-width: 2px;
+  outline: none;
+}
+
+.items-table td input.invalid-time:focus {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
 .numeric {
   text-align: right;
 }

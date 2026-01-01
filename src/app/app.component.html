@@ -5,17 +5,17 @@
       <h1>{{ title }}</h1>
       <p>Completa los datos y visualiza en tiempo real el documento.</p>
       <div class="tabs">
-        <button 
-          type="button" 
-          class="tab-button" 
+        <button
+          type="button"
+          class="tab-button"
           [class.active]="activeTab === 'quote'"
           (click)="activeTab = 'quote'"
         >
           Cotización
         </button>
-        <button 
-          type="button" 
-          class="tab-button" 
+        <button
+          type="button"
+          class="tab-button"
           [class.active]="activeTab === 'invoice'"
           (click)="activeTab = 'invoice'"
         >
@@ -388,6 +388,7 @@
               <tr>
                 <th>#</th>
                 <th>DESCRIPCIÓN</th>
+                <th>TIPO</th>
                 <th>CANTIDAD</th>
                 <th>PRECIO UNITARIO</th>
                 <th>TOTAL</th>
@@ -401,14 +402,39 @@
                   <input type="text" [(ngModel)]="item.description" />
                 </td>
                 <td>
-                  <input type="number" min="0" [(ngModel)]="item.quantity" />
+                  <select [(ngModel)]="item.quantityType" (ngModelChange)="onQuantityTypeChange(item, i)">
+                    <option value="items">Items</option>
+                    <option value="time">Tiempo</option>
+                  </select>
                 </td>
                 <td>
-                  <input type="number" min="0" [(ngModel)]="item.unitPrice" />
+                  <input
+                    *ngIf="item.quantityType === 'items'"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    [(ngModel)]="item.quantity"
+                  />
+                  <input
+                    *ngIf="item.quantityType === 'time'"
+                    type="text"
+                    [value]="item.timeInput || '0:00'"
+                    (input)="onTimeInputChange(item, $event)"
+                    (blur)="onTimeInputBlur(item, $event)"
+                    [class.invalid-time]="!isTimeInputValid(item)"
+                    placeholder="HH:MM"
+                    pattern="\d+:[0-5]?\d"
+                  />
+                </td>
+                <td>
+                  <input type="number" min="0" step="0.01" [(ngModel)]="item.unitPrice" />
                 </td>
                 <td class="numeric">
                   {{
-                    ((+item.quantity || 0) * (+item.unitPrice || 0) | number : '1.0-0')
+                    (item.quantityType === 'time'
+                      ? (getTimeDecimalHours(item.timeInput || '0:00') * (+item.unitPrice || 0))
+                      : ((+item.quantity || 0) * (+item.unitPrice || 0))
+                    ) | number : '1.2-2'
                   }} {{ currency }}
                 </td>
                 <td>
@@ -452,9 +478,9 @@
         <div class="form-grid">
           <label class="full-row">
             <span>Título de datos de pago</span>
-            <input 
-              type="text" 
-              [(ngModel)]="paymentTitle" 
+            <input
+              type="text"
+              [(ngModel)]="paymentTitle"
               placeholder="DATOS DE PAGO - Transferencia SEPA en EUR"
             />
           </label>
@@ -641,10 +667,22 @@
             <tbody>
               <tr *ngFor="let item of invoiceItems; let i = index; trackBy: trackByIndex">
                 <td>{{ item.description }}</td>
-                <td class="numeric">{{ item.quantity | number : '1.0-0' }}</td>
+                <td class="numeric">
+                  <span *ngIf="item.quantityType === 'items'">
+                    {{ item.quantity | number : '1.0-2' }} uds
+                  </span>
+                  <span *ngIf="item.quantityType === 'time'">
+                    {{ item.timeInput || '0:00' }} h
+                  </span>
+                </td>
                 <td class="numeric">{{ item.unitPrice | number : '1.2-2' }} {{ currency }}</td>
                 <td class="numeric">
-                  {{ ((+item.quantity || 0) * (+item.unitPrice || 0) | number : '1.2-2') }} {{ currency }}
+                  {{
+                    (item.quantityType === 'time'
+                      ? (getTimeDecimalHours(item.timeInput || '0:00') * (+item.unitPrice || 0))
+                      : ((+item.quantity || 0) * (+item.unitPrice || 0))
+                    ) | number : '1.2-2'
+                  }} {{ currency }}
                 </td>
               </tr>
             </tbody>
