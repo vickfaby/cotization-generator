@@ -1,0 +1,37 @@
+---
+description: Scaffolding KUIPAD (SSOT + tests + ADRs + antidrift) para Cursor
+alwaysApply: true
+---
+
+# KUIPAD scaffolding (Cursor)
+
+## Fuente de verdad (SSOT)
+- La documentación vive en `docs/` (raíz del repo) y es la fuente de verdad:
+  - `docs/prd.md`
+  - `docs/architecture.md`
+  - `docs/blueprints.md`
+  - `docs/user-stories.md`
+  - `docs/roadmap.md`
+  - `docs/testing-strategy.md`
+  - `docs/decisions-log.md`
+- Si hay contradicción entre “memoria” y `docs/`, **ganan los docs**.
+
+## Interrupción de seguridad (antes de tocar código)
+Antes de implementar/cambiar/reparar código, detente y asegúrate de:
+- Actualizar `docs/user-stories.md` y `docs/roadmap.md` (qué se va a hacer y cómo se valida).
+- Revisar si aplica actualizar `docs/blueprints.md` (patrones/convenciones).
+- Revisar `docs/testing-strategy.md` (qué tests se deben escribir).
+- Si es una decisión no trivial, registrar una ADR en `docs/decisions-log.md`.
+
+## Tests como contrato
+- Proyecto nuevo: primero entorno de tests en verde (smoke) antes del primer código funcional.
+- Bugfix: si no hay test que lo reproduzca, escribir primero el test (rojo), luego el fix (verde).
+
+## Decisiones (ADRs)
+- Decisiones no triviales se registran como ADRs en `docs/decisions-log.md`.
+- ADRs son inmutables: si cambia una decisión, crea una ADR nueva y marca la anterior como “Superseded”.
+
+## Cierre obligatorio (antidrift)
+Al terminar cualquier tarea, muestra un checklist visible indicando para **cada doc SSOT**:
+- “Actualizado” (qué cambió), o
+- “Sin cambios” (por qué no).
